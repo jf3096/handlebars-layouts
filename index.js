@@ -1,4 +1,6 @@
 'use strict';
+const path = require('path');
+const slash = require('slash');
 
 var hasOwn = Object.prototype.hasOwnProperty;
 
@@ -108,6 +110,28 @@ function layouts(handlebars) {
 				customContext = null;
 			}
 
+			if (name.startsWith('/')) {
+				throw new Error('name cannot start with "/"');
+			}
+
+			if (name.startsWith('./') || name.startsWith('../')) {
+				let base = options.data.root.base;
+
+				if (!base) {
+					throw new Error('please specify base of handlebars base path');
+				}
+
+				if (path.isAbsolute(base)) {
+					base = path.join(process.cwd(), options.data.root.base)
+				}
+
+				name = path.relative(
+					base,
+					path.join(options.data.root.path, name)
+				);
+				name = slash(name);
+			}
+
 			options = options || {};
 
 			var fn = options.fn || noop,
@@ -129,7 +153,7 @@ function layouts(handlebars) {
 			getStack(context).push(fn);
 
 			// Render partial
-			return template(context, { data: data });
+			return template(context, {data: data});
 		},
 
 		/**
@@ -170,7 +194,7 @@ function layouts(handlebars) {
 
 			return getActionsByName(context, name).reduce(
 				applyAction.bind(context),
-				fn(context, { data: data })
+				fn(context, {data: data})
 			);
 		},
 
@@ -201,7 +225,7 @@ function layouts(handlebars) {
 
 			// Setter
 			getActionsByName(context, name).push({
-				options: { data: data },
+				options: {data: data},
 				mode: mode.toLowerCase(),
 				fn: fn
 			});
